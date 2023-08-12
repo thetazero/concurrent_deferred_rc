@@ -35,16 +35,8 @@ class bcolors:
   UNDERLINE = '\033[4m'
 
 
-if valid_command('numactl -i all echo'):
-  NUMA_COMMAND = 'numactl -i all '
-else:
-  NUMA_COMMAND = ""
-
-if valid_command('jemalloc-config --libdir'):
-  JEMALLOC_COMMAND = "LD_PRELOAD=`jemalloc-config --libdir`/libjemalloc.so.`jemalloc-config --revision` "
-else:
-  JEMALLOC_COMMAND = ""
-
+NUMA_COMMAND = 'numactl -i all '
+JEMALLOC_COMMAND = 'LD_PRELOAD=/usr/local/lib/libjemalloc.so '
 NUM_THREADS_COMMAND = 'NUM_THREADS={} '
 
 # Plot markers and colors to use

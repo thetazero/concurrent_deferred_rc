@@ -4,13 +4,16 @@
 
 #include <atomic>
 
+#include <cdrc/internal/smr/acquire_retire.h>
+#include <cdrc/internal/utils.h>
+
 namespace internal {
 
 // An instance of an object of type T with an atomic reference count.
 template<typename T>
 struct herlihy_counted_object {
   typename std::aligned_storage<sizeof(T), alignof(T)>::type object;
-  std::atomic<uint64_t> ref_cnt;
+  utils::StickyCounter<uint64_t> ref_cnt;
 
   template<typename... Args>
   explicit herlihy_counted_object(Args&&... args) : ref_cnt(1) {
@@ -26,8 +29,8 @@ struct herlihy_counted_object {
   T* get() { return std::launder(reinterpret_cast<T*>(std::addressof(object))); }
   const T* get() const { return std::launder(reinterpret_cast<T*>(std::addressof(object))); }
 
-  uint64_t add_refs(uint64_t count) { return ref_cnt.fetch_add(count); }
-  uint64_t release_refs(uint64_t count) { return ref_cnt.fetch_sub(count); }
+  bool add_refs(uint64_t count) { return ref_cnt.increment(count); }
+  bool release_refs(uint64_t count) { return ref_cnt.decrement(count); }
 };
 
 }  // namespace internal
@@ -117,7 +120,7 @@ class herlihy_rc_ptr {
 
   static void decrement_counter(internal::herlihy_counted_object<T>* ptr) {
     assert(ptr != nullptr);
-    if (ptr->release_refs(1) == 1) {
+    if (ptr->release_refs(1)) {
       ptr->destroy_object();
       arc_ptr_t::ar.retire(ptr);
     }

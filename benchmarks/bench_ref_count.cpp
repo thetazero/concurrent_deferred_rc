@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <chrono>
 #include <iostream>
+#include <latch>
 #include <numeric>
 #include <vector>
 #include <stdlib.h>
@@ -10,7 +11,6 @@
 #include <boost/program_options.hpp>
 
 #include "common.hpp"
-#include "barrier.hpp"
 
 using namespace std;
 namespace po = boost::program_options;
@@ -64,17 +64,17 @@ struct RefCountBenchmark : Benchmark {
       std::vector<std::thread> threads;
 
       std::atomic<bool> done = false;
-      Barrier barrier(n_threads+1);
+      std::latch barrier(n_threads+1);
       //cout << N << endl;
 
       for (size_t p = 0; p < n_threads; p++) {
         threads.emplace_back([&barrier, &done, this, &cnt, p]() {
           cdrc::utils::rand::init(p+1);
 
-          barrier.wait();
+          barrier.arrive_and_wait();
           
           long long int ops = 0;
-          volatile long long int sum = 0;
+          long long int sum = 0;
           
           for (; !done; ops++) {
             int op = cdrc::utils::rand::get_rand()%100;
@@ -86,8 +86,8 @@ struct RefCountBenchmark : Benchmark {
               exit(1);
             } else {  // load
               SPType<PaddedInt> sp = asp_vec[asp_index].load();
-              int x = sp->getInt();
-              sum = sum + x;
+              int x = *sp;
+              sum += x;            
             }
           }
           cnt[p] = ops;
@@ -95,7 +95,7 @@ struct RefCountBenchmark : Benchmark {
       }
       
       // Run benchmark for one second
-      barrier.wait();
+      barrier.arrive_and_wait();
       start_timer();
 
       std::vector<size_t> allocations;

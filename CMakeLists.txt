@@ -96,13 +96,53 @@ message(STATUS "---------------------------------- Unit Tests ------------------
 find_package(Threads REQUIRED)
 target_link_libraries(cdrc INTERFACE Threads::Threads)
 
-if(LINUX)
-  # Enable 16 byte CAS
-  target_compile_definitions(cdrc INTERFACE -DMCX16)
-  target_compile_options(cdrc INTERFACE -mcx16)
+# Enable 16 byte CAS
+target_compile_definitions(cdrc INTERFACE -DMCX16)
+target_compile_options(cdrc INTERFACE -mcx16)
 
-  # The following might not be needed for 16-byte atomics
-  target_compile_options(cdrc INTERFACE "-march=native")
+# The following might not be needed for 16-byte atomics
+#target_compile_options(concurrent_deferred_rc INTERFACE "-march=native")
+
+# Configure support for just::threads, if available
+# Defines the flag JUST_THREADS_AVAILABLE in cmake,
+# and the compile definition ARC_JUST_THREADS_AVAILABLE
+# for C++ targets.
+find_library(JUST_THREADS_LIB NAMES justthread)
+find_path(JUST_THREADS_INCLUDE NAMES jss/experimental_concurrency.hpp PATH_SUFFIXES justthread)
+if(NOT JUST_THREADS_LIB)
+  message(STATUS "Could not find just::threads library. Certain targets will not be built")
+elseif(NOT JUST_THREADS_INCLUDE)
+  message(STATUS "Could not find just::threads includes. Certain targets will not be built")
+else()
+  message(STATUS "just::threads found -- lib: " ${JUST_THREADS_LIB} " include: " ${JUST_THREADS_INCLUDE})
+  set(JUST_THREADS_AVAILABLE TRUE)
+  add_library(jss INTERFACE)
+  target_include_directories(jss INTERFACE ${JUST_THREADS_INCLUDE})
+  target_link_libraries(jss INTERFACE ${JUST_THREADS_LIB} atomic)
+  target_compile_features(jss INTERFACE cxx_std_17)
+  target_compile_definitions(concurrent_deferred_rc INTERFACE -DARC_JUST_THREADS_AVAILABLE)
+  target_link_libraries(concurrent_deferred_rc INTERFACE jss)
+endif()
+
+# Configure support for folly, if available
+# Defines the flag FOLLY_AVAILABLE in cmake,
+# and the compile definition ARC_FOLLY_AVAILABLE
+# for C++ targets.
+find_library(FOLLY_LIB NAMES folly)
+find_path(FOLLY_INCLUDE NAMES folly/concurrency/AtomicSharedPtr.h PATH_SUFFIXES folly)
+if(NOT FOLLY_LIB)
+  message(STATUS "Could not find folly library. Certain targets will not be built")
+elseif(NOT FOLLY_INCLUDE)
+  message(STATUS "Could not find folly includes. Certain targets will not be built")
+else()
+  message(STATUS "folly found -- lib: " ${FOLLY_LIB} " include: " ${FOLLY_INCLUDE})
+  set(FOLLY_AVAILABLE TRUE)
+  add_library(fss INTERFACE)
+  target_include_directories(fss INTERFACE ${FOLLY_INCLUDE})
+  target_link_libraries(fss INTERFACE ${FOLLY_LIB} glog dl pthread double-conversion fmt gflags)
+  target_compile_features(fss INTERFACE cxx_std_14)
+  target_compile_definitions(concurrent_deferred_rc INTERFACE -DARC_FOLLY_AVAILABLE)
+  target_link_libraries(concurrent_deferred_rc INTERFACE fss)
 endif()
 
 # User option to build unit tests

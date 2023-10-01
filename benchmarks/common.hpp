@@ -12,7 +12,11 @@
 #include "external/herlihy/herlihy_arc_ptr_opt.h"
 #include "external/herlihy/herlihy_rc_ptr.h"
 
-#include "/home/daniel/atomic_shared_ptr/include/parlay/atomic_shared_ptr_custom.hpp"
+#include "external/atomic_shared_ptr/include/parlay/atomic_shared_ptr_custom.hpp"
+
+#include "external/atomic_shared_ptr/benchmark/external/anthonywilliams/atomic_shared_ptr"
+
+#include "external/atomic_shared_ptr/benchmark/external/vtyulb/atomic_shared_ptr.h"
 
 #include "external/wait-free-atomic-arc/cpp/atomic_shared_ptr.h"
 
@@ -28,9 +32,11 @@
 //                  Shared pointer implementations
 // ==================================================================
 
+
 // C++ standard library atomic support for shared ptrs
 template<typename T>
 using StlAtomicSharedPtr = std::atomic<std::shared_ptr<T>>;
+
 
 #ifdef ARC_JUST_THREADS_AVAILABLE
 // Just::threads atomic support for shared ptrs
@@ -56,12 +62,25 @@ template<typename T>
 using MySharedPtr = parlay::shared_ptr<T>;
 
 template<typename T>
+<<<<<<< HEAD
 using IvoAtomicRcPtr = ivo::atomic_shared_ptr<T>;
 
 template<typename T>
 using IvoRcPtr = ivo::shared_ptr<T>;
+=======
+using JssSharedPtr = jss::shared_ptr<T>;
 
-using PaddedInt = utils::Padded<int>;
+template<typename T>
+using JssFreeAtomicSharedPtr = jss::atomic_shared_ptr<T>;
+>>>>>>> 36d00bd (Benchmarks for new atomic_shared_ptr)
+
+template<typename T>
+using VTSharedPtr = LFStructs::SharedPtr<T>;
+
+template<typename T>
+using VTAtomicSharedPtr = LFStructs::AtomicSharedPtr<T>;
+
+using PaddedInt = int;
 
 static_assert(std::constructible_from<PaddedInt, int&>);
 
@@ -79,6 +98,10 @@ SPType<PaddedInt> make_shared_int(int val) {
     return herlihy_rc_ptr<PaddedInt, true>::make_shared(val);                       // Herlihy's algorithm
   else if constexpr (std::is_same_v<SPType<PaddedInt>, MySharedPtr<PaddedInt>>)
     return parlay::make_shared<PaddedInt>(val);
+  else if constexpr (std::is_same_v<SPType<PaddedInt>, JssSharedPtr<PaddedInt>>)
+    return jss::make_shared<PaddedInt>(val);
+  else if (std::is_same_v<SPType<PaddedInt>, VTSharedPtr<PaddedInt>>)
+    return LFStructs::SharedPtr<PaddedInt>(new PaddedInt{});
   else // homebrew shared pointer [depricated]
   {
     std::cerr << "invalid SPType" << std::endl;
@@ -90,6 +113,7 @@ SPType<PaddedInt> make_shared_int(int val) {
 template<typename T, template<typename> typename SPType>
 SPType<T> make_shared() {
   if constexpr (std::is_same<SPType<T>, std::shared_ptr<T>>::value)
+    //return std::shared_ptr<T>(new T{});
     return std::make_shared<T>();
 #ifdef ARC_JUST_THREADS_AVAILABLE
   else if constexpr (std::is_same<SPType<T>, std::experimental::shared_ptr<T>>::value)
@@ -97,12 +121,22 @@ SPType<T> make_shared() {
 #endif
   else if constexpr (std::is_same<SPType<T>, HerlihyRcPtrOpt<T>>::value)
     return HerlihyRcPtrOpt<T>::make_shared();
+<<<<<<< HEAD
   else if constexpr (std::is_same<SPType<T>, cdrc::rc_ptr<T>>::value)
     return cdrc::rc_ptr<T>::make_shared();
   else if constexpr (std::is_same<SPType<PaddedInt>, OrcRcPtr<PaddedInt>>::value)   // ORC-GC's "orc_ptr"
     return orcgc_ptp::make_orc<T>();
   else if constexpr (std::is_same<SPType<T>, IvoRcPtr<T>>::value)
     return ivo::shared_ptr<T>::make_shared();
+=======
+  else if constexpr (std::is_same_v<SPType<T>, MySharedPtr<T>>)
+    //return parlay::shared_ptr<T>(new T{});
+    return parlay::make_shared<T>();
+  else if constexpr (std::is_same_v<SPType<T>, JssSharedPtr<T>>)
+    return jss::make_shared<T>();
+  else if (std::is_same_v<SPType<T>, VTSharedPtr<T>>)
+    return LFStructs::SharedPtr<T>(new T{});
+>>>>>>> 36d00bd (Benchmarks for new atomic_shared_ptr)
   else {
     std::cerr << "invalid SPType" << std::endl;
     exit(1);
@@ -175,11 +209,16 @@ void run_benchmark(std::string alg) {
     run_benchmark_helper<BenchmarkType, IvoAtomicRcPtr, IvoRcPtr>("Ivo");
   else if (alg == "mine")
     run_benchmark_helper<BenchmarkType, MyAtomicSharedPtr, MySharedPtr>("My atomic shared ptr");
+  else if (alg == "jss-free")
+    run_benchmark_helper<BenchmarkType, JssFreeAtomicSharedPtr, JssSharedPtr>("JSS-OpenSource");
+  else if (alg == "lfstructs")
+    run_benchmark_helper<BenchmarkType, VTAtomicSharedPtr, VTSharedPtr>("Vtyulb");
   else {
     std::cout << "invalid alg name: " << alg << std::endl;
     exit(1);
   }
 
 }
+
 
 #endif  // BENCHMARKS_COMMON_HPP_

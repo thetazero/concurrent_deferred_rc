@@ -1,3 +1,6 @@
 [submodule "benchmarks/external/wait-free-atomic-arc"]
 	path = benchmarks/external/wait-free-atomic-arc
 	url = https://github.com/ivogabe/wait-free-atomic-arc
+[submodule "benchmarks/external/atomic_shared_ptr"]
+	path = benchmarks/external/atomic_shared_ptr
+	url = https://github.com/DanielLiamAnderson/atomic_shared_ptr.git

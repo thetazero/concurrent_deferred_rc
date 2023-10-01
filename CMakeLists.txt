@@ -145,8 +145,15 @@ else()
   target_link_libraries(concurrent_deferred_rc INTERFACE fss)
 endif()
 
+find_package(Parlay 2.2.1 REQUIRED)
+target_link_libraries(cdrc INTERFACE Parlay::parlay)
+message(STATUS "Using ParlayLib found at ${Parlay_DIR}")
+
 # User option to build unit tests
 option(CDRC_TEST  "Build unit tests"       ON)
+
+# -------------------------------------------------------------------
+#                             Tests
 
 if (CDRC_TEST)
   # Set CMake options for GoogleTest

@@ -179,7 +179,6 @@ private:
 
 template<typename T>
 class StrongAndWeakCounter {
-  alignas(alignof(T)) unsigned char storage[sizeof(T)];
 
 public:
   StrongAndWeakCounter(uint32_t count) noexcept : ref_cnt(count), weak_cnt(count) {};
@@ -193,9 +192,9 @@ public:
     // any thread that moves the strong reference count from 0->1 to have to increment the weak reference count
     // QUESTION: is this actually for 0->count
     bool incremented_from_zero = !ref_cnt.increment(count, std::memory_order_relaxed);
-    // if (incremented_from_zero) {
-    //   increment_weak(count);
-    // } 
+    if (incremented_from_zero) {
+      increment_weak(count);
+    } 
     return !incremented_from_zero;
   }
   bool increment_weak(uint64_t count) { return weak_cnt.increment(count, std::memory_order_relaxed); }
@@ -204,9 +203,12 @@ public:
     // any thread that moves the strong reference count from 1->0 to have to decrement the weak reference count 
     // QUESTION: is this actually for count->0
     bool decremented_to_zero = ref_cnt.decrement(count, std::memory_order_release);
-    // if (decremented_to_zero) {
-    //   decrement_weak(count);
-    // }
+    if (decremented_to_zero) {
+      // dipose_of_the_object()
+      // actually delayed_dispose_of_the_object() with hazptr protection
+      // Actually a eject action delay
+      // decrement_weak(count); //  return value is ignored, optimize later maybe?
+    }
     return decremented_to_zero;
   }
   bool decrement_weak(uint64_t count) { return weak_cnt.decrement(count, std::memory_order_release); }

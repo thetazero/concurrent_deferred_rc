@@ -104,7 +104,7 @@ struct memory_manager_base {
     }
   }
 
-  bool increment_ref_cnt(counted_ptr_t ptr) {
+  utils::IncrementResult increment_ref_cnt(counted_ptr_t ptr) {
     assert(ptr != nullptr);
     return ptr->add_refs(1);
   }

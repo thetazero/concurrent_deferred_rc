@@ -58,7 +58,7 @@ struct counted_object {
   auto get_use_count() const { return counter.load_strong(); }
   auto get_weak_count() const { return counter.load_weak(); }
 
-  bool add_refs(uint64_t count) { return counter.increment_strong(count); }
+  utils::IncrementResult add_refs(uint64_t count) { return counter.increment_strong(count); }
 
   enum class EjectAction {
     nothing,

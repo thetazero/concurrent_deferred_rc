@@ -99,6 +99,14 @@ template<typename T>
 struct alignas(128) Padded<T, typename std::enable_if<std::is_class<T>::value>::type> : public T { };
 
 
+// Result of incrementing a counter
+enum IncrementResult {
+  NORMAL, // incremented when count >= 0
+  FROM_PARTIAL_ZERO, // increment when count was partially zeroed
+  FROM_TRUE_ZERO // increment when count was fully zeroed (all threads agree it is zero)
+};
+
+
 template<typename T>
 static constexpr inline T zero_flag = (T(1) << (sizeof(T)*8 - 1));
 template<typename T>
@@ -136,9 +144,11 @@ public:
   //
   // Returns true if the increment was successful, i.e., the counter
   // was not stuck at zero. Returns false if the counter was zero
-  bool increment(T arg, std::memory_order order = std::memory_order_seq_cst) noexcept {
+  IncrementResult increment(T arg, std::memory_order order = std::memory_order_seq_cst) noexcept {
     T val = x.fetch_add(arg, order);
-    return (val & zero_flag<T>) == 0;
+    if ((val & zero_flag<T>) == 0) return NORMAL;
+    else if (val == 1) return FROM_PARTIAL_ZERO;
+    else return FROM_TRUE_ZERO;
   }
 
   // Decrement the counter by the given amount. The counter must initially be
@@ -188,16 +198,16 @@ public:
   T load_strong(std::memory_order order = std::memory_order_seq_cst) const { return ref_cnt.load(order); }
   T load_weak(std::memory_order order = std::memory_order_seq_cst) const { return weak_cnt.load(order); }
 
-  bool increment_strong(uint64_t count) {
+  IncrementResult increment_strong(uint64_t count) {
     // any thread that moves the strong reference count from 0->1 to have to increment the weak reference count
     // QUESTION: is this actually for 0->count
-    bool incremented_from_zero = !ref_cnt.increment(count, std::memory_order_relaxed);
-    if (incremented_from_zero) {
+    IncrementResult increment_result = ref_cnt.increment(count, std::memory_order_relaxed);
+    if (increment_result == IncrementResult::FROM_PARTIAL_ZERO){
       increment_weak(count);
-    } 
-    return !incremented_from_zero;
+    }
+    return increment_result;
   }
-  bool increment_weak(uint64_t count) { return weak_cnt.increment(count, std::memory_order_relaxed); }
+  bool increment_weak(uint64_t count) { return weak_cnt.increment(count, std::memory_order_relaxed) == IncrementResult::NORMAL; }
 
   bool decrement_strong(uint64_t count) { 
     // any thread that moves the strong reference count from 1->0 to have to decrement the weak reference count 

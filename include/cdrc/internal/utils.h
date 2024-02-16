@@ -146,8 +146,8 @@ public:
   // was not stuck at zero. Returns false if the counter was zero
   IncrementResult increment(T arg, std::memory_order order = std::memory_order_seq_cst) noexcept {
     T val = x.fetch_add(arg, order);
-    if ((val & zero_flag<T>) == 0) return NORMAL;
-    else if (val == 1) return FROM_PARTIAL_ZERO;
+    if (val == 0) return FROM_PARTIAL_ZERO;
+    else if ((val & zero_flag<T>) == 0) return NORMAL;
     else return FROM_TRUE_ZERO;
   }
 
@@ -202,7 +202,7 @@ public:
     // any thread that moves the strong reference count from 0->1 to have to increment the weak reference count
     // QUESTION: is this actually for 0->count
     IncrementResult increment_result = ref_cnt.increment(count, std::memory_order_relaxed);
-    if (increment_result == IncrementResult::FROM_PARTIAL_ZERO){
+    if (increment_result == IncrementResult::FROM_PARTIAL_ZERO) {
       increment_weak(count);
     }
     return increment_result;

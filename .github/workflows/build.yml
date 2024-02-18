@@ -31,7 +31,7 @@ jobs:
       - name: Set up toolchain repositories
         run: |
           wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-          sudo apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main"
+          sudo apt-add-repository "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main"
       - name: Install Compiler
         run: |
           sudo apt-get update

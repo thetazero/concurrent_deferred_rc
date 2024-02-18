@@ -19,10 +19,6 @@ jobs:
         config:
           - {
             os: ubuntu-latest,
-            cc: "gcc-9", cxx: "g++-9"
-          }
-          - {
-            os: ubuntu-latest,
             cc: "gcc-11", cxx: "g++-11"
           }
           - {

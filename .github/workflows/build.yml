@@ -68,7 +68,7 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
       - name: Install Dependencies
         run: |
-          brew install hwloc boost jemalloc llvm clang@17
+          brew install hwloc boost jemalloc llvm@17
       - name: Echo Clang Version
         run: clang --version
       - name: Configure

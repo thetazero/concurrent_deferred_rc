@@ -66,11 +66,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: ilammy/msvc-dev-cmd@v1
-      - name: Echo Clang Version
-        run: clang --version
       - name: Install Dependencies
         run: |
-          brew install hwloc boost jemalloc
+          brew install hwloc boost jemalloc llvm
+      - name: Echo Clang Version
+        run: clang --version
       - name: Configure
         run: |
           mkdir build

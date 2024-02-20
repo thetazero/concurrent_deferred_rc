@@ -12,12 +12,14 @@ set(MEMORYCHECK_COMMAND_OPTIONS "--leak-check=full --error-exitcode=1 --show-lea
 include(CTest)
 include(CheckCXXCompilerFlag)
 include(GoogleTest)
+include(coverage)
 
 # --------------------------------------------------------------------
 #                           USER-FACING OPTIONS
 # --------------------------------------------------------------------
 
 # Option to enable the sanitizer-instrumented tests
+option(COVERAGE               "Use gcov for coverage"               OFF)
 option(BUILD_ONLY_SANITIZED   "Build only the sanitized tests"      OFF)
 option(BUILD_ASAN_TESTS       "Build tests instrumented with ASAN"  OFF)
 option(BUILD_UBSAN_TESTS      "Build tests instrumented with UBSAN" OFF)
@@ -55,6 +57,13 @@ set(DTEST_TSAN_FLAGS
   -fsanitize=thread
   -fno-sanitize-recover=thread
 )
+
+if (COVERAGE)
+  set(CMAKE_CXX_FLAGS "-g -O0 -fprofile-arcs -ftest-coverage")
+  message(STATUS "TestCoverage:                 Enabled")
+else()
+  message(STATUS "TestCoverage:                 Disabled (Enable with -DCOVERAGE=On)")
+endif()
 
 # Sanitizer blacklist file
 set(DTEST_SANITIZER_BLACKLIST_FILE "${CMAKE_SOURCE_DIR}/.sanitizer-blacklist")
@@ -314,4 +323,14 @@ if(ENABLE_MEMCHECK_TESTS)
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
   )
   add_dependencies(check-all check-memcheck)
+endif()
+
+if (COVERAGE)
+  SETUP_TARGET_FOR_COVERAGE(
+    coverage_report  # Name for custom target.
+    ctest         # Name of the test driver executable that runs the tests.
+    # NOTE! This should always have a ZERO as exit code
+    # otherwise the coverage generation will not complete.
+    coverage            # Name of output directory.
+    )
 endif()

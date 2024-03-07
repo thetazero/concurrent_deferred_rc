@@ -187,7 +187,7 @@ struct acquire_retire : public memory_manager_base<T, acquire_retire<T, snapshot
     if (slot == nullptr) {
       while (true) {
         auto a = acquire(p);
-        if (a.get() && increment_ref_cnt(a.get())) return acquired_pointer<U>(a.get(), nullptr);
+        if (a.get() && (increment_ref_cnt(a.get()) != utils::IncrementResult::FROM_TRUE_ZERO)) return acquired_pointer<U>(a.get(), nullptr);
         else if (a.get() == nullptr || p->load() == a.get()) return acquired_pointer<U>(nullptr, nullptr);
       }
     }

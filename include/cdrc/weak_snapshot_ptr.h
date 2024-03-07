@@ -52,7 +52,11 @@ class weak_snapshot_ptr : public pointer_policy::template snapshot_ptr_policy<T>
 
   rc_ptr_t lock() const noexcept {
     auto ptr = acquired_ptr.get();
-    if (ptr && mm.increment_ref_cnt(ptr)) return rc_ptr_t(ptr, rc_ptr_t::AddRef::no);
+    if (ptr){
+      utils::IncrementResult res = mm.increment_ref_cnt(ptr);
+      if (res == utils::IncrementResult::FROM_TRUE_ZERO) return nullptr;
+      else return rc_ptr_t(ptr, rc_ptr_t::AddRef::no);
+    }
     else return nullptr;
   }
 
@@ -120,7 +124,7 @@ class weak_snapshot_ptr : public pointer_policy::template snapshot_ptr_policy<T>
   counted_ptr_t release() {
     auto old_ptr = acquired_ptr.getValue();
     if (acquired_ptr.is_protected()) {
-      if (mm.increment_ref_cnt(old_ptr)) {
+      if (mm.increment_ref_cnt(old_ptr) != utils::IncrementResult::FROM_TRUE_ZERO) {
         acquired_ptr.clear();
         return old_ptr;
       }

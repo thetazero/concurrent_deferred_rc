@@ -72,6 +72,9 @@ struct memory_manager_base {
     assert(ptr->get_use_count() == 0);
     ptr->dispose();
     if (ptr->release_weak_refs(1)) destroy(ptr);
+    // Here we see dispose get called (potentialy) after the weak counter has been decremented
+    // While before dispose was always called before the weak counter was decremented
+    // if (ptr->get_weak_count() == 0) destroy(ptr);
   }
 
   void destroy(counted_ptr_t ptr) {
@@ -101,7 +104,7 @@ struct memory_manager_base {
     }
   }
 
-  bool increment_ref_cnt(counted_ptr_t ptr) {
+  utils::IncrementResult increment_ref_cnt(counted_ptr_t ptr) {
     assert(ptr != nullptr);
     return ptr->add_refs(1);
   }

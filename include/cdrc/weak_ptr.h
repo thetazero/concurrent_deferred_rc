@@ -70,7 +70,11 @@ class weak_ptr : public pointer_policy::template rc_ptr_policy<T> {
   }
 
   rc_ptr_t lock() const noexcept {
-    if (ptr && mm.increment_ref_cnt(ptr)) return rc_ptr_t(ptr, rc_ptr_t::AddRef::no);
+    if (ptr){
+      utils::IncrementResult res = mm.increment_ref_cnt(ptr);
+      if (res == utils::IncrementResult::FROM_TRUE_ZERO) return nullptr;
+      else return rc_ptr_t(ptr, rc_ptr_t::AddRef::no);
+    }
     else return nullptr;
   }
 

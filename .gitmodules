@@ -1,0 +1,3 @@
+[submodule "benchmarks/external/wait-free-atomic-arc"]
+	path = benchmarks/external/wait-free-atomic-arc
+	url = https://github.com/ivogabe/wait-free-atomic-arc

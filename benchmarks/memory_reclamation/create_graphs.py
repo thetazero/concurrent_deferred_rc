@@ -2,6 +2,7 @@ import json
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
+import os
 from run_experiments import to_experiment_string
 
 names = {
@@ -276,7 +277,7 @@ exp_type_to_yaxis = {
 
 def graph_experiment(exp_string, exp_type, data_structure, workload, data, metadata):
   sns.set_theme(style="whitegrid")
-  sns.set(
+  sns.set_theme(
     font_scale=1.4,
     rc={
       'figure.figsize':(8.13,4.6),
@@ -291,7 +292,11 @@ def graph_experiment(exp_string, exp_type, data_structure, workload, data, metad
   cur_plot.set_ylabel(exp_type_to_yaxis[exp_type])
   sns.move_legend(cur_plot, "upper left", bbox_to_anchor=(1,1))
   plt.tight_layout()
-  plt.savefig(f'graphs/{exp_type}-{exp_string}.new.png')
+
+  if not os.path.exists('graphs'):
+    os.mkdir('graphs')
+  out_file = f'graphs/{exp_type}-{exp_string}.new.png'
+  plt.savefig(out_file)
   plt.clf()
 
 

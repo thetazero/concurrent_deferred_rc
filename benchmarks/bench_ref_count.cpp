@@ -149,7 +149,7 @@ int main(int argc, char* argv[]) {
   ("update,u", po::value<int>()->default_value(10), "Percentage of Stores")
   ("runtime,r", po::value<double>()->default_value(0.5), "Runtime of Benchmark (seconds)")
   ("iterations,i", po::value<int>()->default_value(5), "Number of times to run benchmark")
-  ("alg,a", po::value<string>()->default_value("gnu"), "Choose one of: gnu, jss, folly, herlihy, weak_atomic, arc, orc");
+  ("alg,a", po::value<string>()->default_value("gnu"), choose_one_of);
 
 
   po::variables_map vm;
@@ -170,5 +170,3 @@ int main(int argc, char* argv[]) {
 
   run_benchmark<RefCountBenchmark>(bench_params::alg);
 }
-
-

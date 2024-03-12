@@ -5,8 +5,9 @@
 #include <chrono>
 #include <iostream>
 #include <numeric>
-#include <vector>
+#include <string>
 #include <thread>
+#include <vector>
 
 #include <boost/program_options.hpp>
 
@@ -173,7 +174,7 @@ int main(int argc, char* argv[]) {
       ("update,u", po::value<int>()->default_value(10), "Percentage of pushes/pops")
       ("runtime,r", po::value<double>()->default_value(0.5), "Runtime of Benchmark (seconds)")
       ("iterations,i", po::value<int>()->default_value(5), "Number of times to run benchmark")
-      ("alg,a", po::value<string>()->default_value("gnu"), "Choose one of: gnu, jss, folly, herlihy, weak_atomic, arc, orc")
+      ("alg,a", po::value<string>()->default_value("gnu"), choose_one_of)
       ("stack_size", po::value<int>()->default_value(20), "Number of initial elements in each stack")
       ("peek", po::value<bool>()->default_value(false), "Use peek instead of find as the read workload");
 
@@ -198,5 +199,3 @@ int main(int argc, char* argv[]) {
 
   run_benchmark<StackBenchmark>(bench_params::alg);
 }
-
-

@@ -5,6 +5,7 @@
 #include <atomic>
 #include <chrono>
 #include <iostream>
+#include <string>
 
 #include <cdrc/rc_ptr.h>
 #include <cdrc/atomic_rc_ptr.h>
@@ -18,6 +19,8 @@
 #include "external/herlihy/herlihy_rc_ptr.h"
 
 #include "external/orcgc/OrcPTP.hpp"
+
+#include "external/wait-free-atomic-arc/cpp/atomic_shared_ptr.h"
 
 #ifdef ARC_JUST_THREADS_AVAILABLE
 #include <experimental/atomic>
@@ -82,6 +85,12 @@ using OrcAtomicRcPtr = orcgc_ptp::orc_atomic<T*>;
 template<typename T>
 using OrcRcPtr = orcgc_ptp::orc_ptr<T*>;
 
+template<typename T>
+using IvoAtomicRcPtr = ivo::atomic_shared_ptr<T>;
+
+template<typename T>
+using IvoRcPtr = ivo::shared_ptr<T>;
+
 struct alignas(32) PaddedInt : orcgc_ptp::orc_base {
   int x;
   PaddedInt(int x) : x(x) {}
@@ -104,6 +113,8 @@ SPType<PaddedInt> make_shared_int(int val) {
     return cdrc::rc_ptr<PaddedInt>::make_shared(val);                                     // Our algorithm
   else if constexpr (std::is_same<SPType<PaddedInt>, OrcRcPtr<PaddedInt>>::value)   // ORC-GC's "orc_ptr"
     return orcgc_ptp::make_orc<PaddedInt>(val);
+  else if constexpr (std::is_same<SPType<PaddedInt>, IvoRcPtr<PaddedInt>>::value)
+    return ivo::shared_ptr<PaddedInt>::make_shared(val);
   else // homebrew shared pointer [depricated]
   {
     std::cerr << "invalid SPType" << std::endl;
@@ -126,8 +137,10 @@ SPType<T> make_shared() {
     return HerlihyRcPtrOpt<T>::make_shared();
   else if constexpr (std::is_same<SPType<T>, cdrc::rc_ptr<T>>::value)
     return cdrc::rc_ptr<T>::make_shared();
-  else if (std::is_same<SPType<PaddedInt>, OrcRcPtr<PaddedInt>>::value)   // ORC-GC's "orc_ptr"
+  else if constexpr (std::is_same<SPType<PaddedInt>, OrcRcPtr<PaddedInt>>::value)   // ORC-GC's "orc_ptr"
     return orcgc_ptp::make_orc<T>();
+  else if constexpr (std::is_same<SPType<T>, IvoRcPtr<T>>::value)
+    return ivo::shared_ptr<T>::make_shared();
   else {
     std::cerr << "invalid SPType" << std::endl;
     exit(1);
@@ -179,6 +192,8 @@ void run_benchmark_helper(std::string name) {
   std::cout << std::endl;
 }
 
+constexpr char choose_one_of[] = "Choose one of: gnu, jss, folly, herlihy, weak_atomic, arc, orc, ivo";
+
 // Run the given benchmark with all shared ptr implementations
 template<template<template<typename> typename, template<typename> typename> typename BenchmarkType>
 void run_benchmark(std::string alg) {
@@ -204,6 +219,8 @@ void run_benchmark(std::string alg) {
     run_benchmark_helper<BenchmarkType, SnapshottingArcPtr, OurRcPtr>("ARC");
   else if (alg == "orc")
     run_benchmark_helper<BenchmarkType, OrcAtomicRcPtr, OrcRcPtr>("ORC-GC");
+  else if (alg == "ivo") 
+    run_benchmark_helper<BenchmarkType, IvoAtomicRcPtr, IvoRcPtr>("Ivo");
   else {
     std::cout << "invalid alg name: " << alg << std::endl;
     exit(1);
@@ -212,4 +229,3 @@ void run_benchmark(std::string alg) {
 }
 
 #endif  // BENCHMARKS_COMMON_HPP_
-

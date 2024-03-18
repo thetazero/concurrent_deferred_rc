@@ -175,6 +175,4 @@ endif()
 # -------------------------------------------------------------------
 #                           Figures
 
-if(LINUX)
-  add_subdirectory(results)
-endif()
+add_subdirectory(results)

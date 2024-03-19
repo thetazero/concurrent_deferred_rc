@@ -190,8 +190,8 @@ endfunction()
 add_custom_target(exp-store-figures)
 set(store_load_algorithms herlihy herlihy-opt orc arc)
 set(store_load_labels Herlihy "Herlihy (optimized)" OrcGC DRC)
-set(store_load_colors tab:blue tab:red tab:purple tab:brown tab:pink tab:black)
-set(store_load_markers s P * | > +)
+set(store_load_colors tab:blue tab:red tab:purple tab:brown tab:pink)
+set(store_load_markers s P * | >)
 
 # Include Folly benchmarks if Folly is installed
 if (FOLLY_AVAILABLE)
@@ -274,10 +274,10 @@ add_scaling_figure(
 # --------------------- Stack experiment --------------------------
 
 add_custom_target(exp-stack-figures)
-set(stack_algorithms gnu herlihy-opt orc weak_atomic arc ivo)
-set(stack_labels "GNU C++" "Herlihy (optimized)" OrcGC DRC "DRC (+ snapshots)" IVO)
-set(stack_colors tab:blue tab:purple tab:brown tab:pink tab:olive tab:red)
-set(stack_markers s * | > D +)
+set(stack_algorithms gnu herlihy-opt ivo)
+set(stack_labels "GNU C++" "Herlihy (optimized)"  IVO)
+set(stack_colors tab:blue tab:purple tab:red)
+set(stack_markers s * |)
 
 # Include Folly benchmarks if Folly is installed
 if (FOLLY_AVAILABLE)

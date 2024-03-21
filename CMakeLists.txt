@@ -133,9 +133,14 @@ find_package(Gflags CONFIG REQUIRED)
 set_target_properties(gflags_shared PROPERTIES
         MAP_IMPORTED_CONFIG_DEBUG Release
 )
+
+find_package(fmt REQUIRED)
+include_directories(/home/thetazero/research/new_stuff/run_all_benchmarks/install/fmt/include/)
+link_directories(/home/thetazero/research/new_stuff/run_all_benchmarks/install/fmt/lib)
+
 find_package(folly REQUIRED)
-set_and_check(FOLLY_INCLUDE_DIR /home/thetazero/research/new_stuff/run_all_benchmarks/install/folly/include)
-set_and_check(FOLLY_INCLUDE_DIR /home/thetazero/research/new_stuff/run_all_benchmarks/install/folly/lib/cmake/folly)
+include_directories(/home/thetazero/research/new_stuff/run_all_benchmarks/install/folly/include/)
+link_directories(/home/thetazero/research/new_stuff/run_all_benchmarks/install/folly/lib)
 if (NOT TARGET Folly::folly)
   include("${FOLLY_CMAKE_DIR}/folly-targets.cmake")
 endif()

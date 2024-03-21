@@ -9,6 +9,7 @@
 #include <thread>
 
 #include <boost/program_options.hpp>
+#include <cdrc/rc_ptr.h>
 
 #include "common.hpp"
 

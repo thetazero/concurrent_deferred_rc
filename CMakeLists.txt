@@ -120,8 +120,8 @@ else()
   target_include_directories(jss INTERFACE ${JUST_THREADS_INCLUDE})
   target_link_libraries(jss INTERFACE ${JUST_THREADS_LIB} atomic)
   target_compile_features(jss INTERFACE cxx_std_17)
-  target_compile_definitions(concurrent_deferred_rc INTERFACE -DARC_JUST_THREADS_AVAILABLE)
-  target_link_libraries(concurrent_deferred_rc INTERFACE jss)
+  target_compile_definitions(cdrc INTERFACE -DARC_JUST_THREADS_AVAILABLE)
+  target_link_libraries(cdrc INTERFACE jss)
 endif()
 
 # Configure support for folly, if available
@@ -135,12 +135,12 @@ set_target_properties(gflags_shared PROPERTIES
 )
 
 find_package(fmt REQUIRED)
-include_directories(/home/thetazero/research/new_stuff/run_all_benchmarks/install/fmt/include/)
-link_directories(/home/thetazero/research/new_stuff/run_all_benchmarks/install/fmt/lib)
+include_directories(${PROJECT_SOURCE_DIR}/../install/fmt/include/)
+link_directories(${PROJECT_SOURCE_DIR}/../install/fmt/lib)
 
 find_package(folly REQUIRED)
-include_directories(/home/thetazero/research/new_stuff/run_all_benchmarks/install/folly/include/)
-link_directories(/home/thetazero/research/new_stuff/run_all_benchmarks/install/folly/lib)
+include_directories(${PROJECT_SOURCE_DIR}/../install/folly/include/)
+link_directories(${PROJECT_SOURCE_DIR}/../install/folly/lib)
 if (NOT TARGET Folly::folly)
   include("${FOLLY_CMAKE_DIR}/folly-targets.cmake")
 endif()
@@ -151,6 +151,7 @@ if (NOT folly_FIND_QUIETLY)
   message(STATUS "Found folly: ${PACKAGE_PREFIX_DIR}")
 endif()
 target_link_libraries(cdrc INTERFACE ${FOLLY_LIBRARIES})
+target_link_libraries(cdrc INTERFACE fmt)
 
 
 find_package(Parlay 2.2.1 REQUIRED)

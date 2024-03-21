@@ -128,22 +128,25 @@ endif()
 # Defines the flag FOLLY_AVAILABLE in cmake,
 # and the compile definition ARC_FOLLY_AVAILABLE
 # for C++ targets.
-find_library(FOLLY_LIB NAMES folly)
-find_path(FOLLY_INCLUDE NAMES folly/concurrency/AtomicSharedPtr.h PATH_SUFFIXES folly)
-if(NOT FOLLY_LIB)
-  message(STATUS "Could not find folly library. Certain targets will not be built")
-elseif(NOT FOLLY_INCLUDE)
-  message(STATUS "Could not find folly includes. Certain targets will not be built")
-else()
-  message(STATUS "folly found -- lib: " ${FOLLY_LIB} " include: " ${FOLLY_INCLUDE})
-  set(FOLLY_AVAILABLE TRUE)
-  add_library(fss INTERFACE)
-  target_include_directories(fss INTERFACE ${FOLLY_INCLUDE})
-  target_link_libraries(fss INTERFACE ${FOLLY_LIB} glog dl pthread double-conversion fmt gflags)
-  target_compile_features(fss INTERFACE cxx_std_14)
-  target_compile_definitions(concurrent_deferred_rc INTERFACE -DARC_FOLLY_AVAILABLE)
-  target_link_libraries(concurrent_deferred_rc INTERFACE fss)
+find_package(Gflags CONFIG REQUIRED)
+
+set_target_properties(gflags_shared PROPERTIES
+        MAP_IMPORTED_CONFIG_DEBUG Release
+)
+find_package(folly REQUIRED)
+set_and_check(FOLLY_INCLUDE_DIR /home/thetazero/research/new_stuff/run_all_benchmarks/install/folly/include)
+set_and_check(FOLLY_INCLUDE_DIR /home/thetazero/research/new_stuff/run_all_benchmarks/install/folly/lib/cmake/folly)
+if (NOT TARGET Folly::folly)
+  include("${FOLLY_CMAKE_DIR}/folly-targets.cmake")
 endif()
+
+set(FOLLY_LIBRARIES Folly::folly)
+
+if (NOT folly_FIND_QUIETLY)
+  message(STATUS "Found folly: ${PACKAGE_PREFIX_DIR}")
+endif()
+target_link_libraries(cdrc INTERFACE ${FOLLY_LIBRARIES})
+
 
 find_package(Parlay 2.2.1 REQUIRED)
 target_link_libraries(cdrc INTERFACE Parlay::parlay)

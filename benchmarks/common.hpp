@@ -62,17 +62,16 @@ template<typename T>
 using MySharedPtr = parlay::shared_ptr<T>;
 
 template<typename T>
-<<<<<<< HEAD
 using IvoAtomicRcPtr = ivo::atomic_shared_ptr<T>;
 
 template<typename T>
 using IvoRcPtr = ivo::shared_ptr<T>;
-=======
+
+template<typename T>
 using JssSharedPtr = jss::shared_ptr<T>;
 
 template<typename T>
 using JssFreeAtomicSharedPtr = jss::atomic_shared_ptr<T>;
->>>>>>> 36d00bd (Benchmarks for new atomic_shared_ptr)
 
 template<typename T>
 using VTSharedPtr = LFStructs::SharedPtr<T>;
@@ -121,22 +120,16 @@ SPType<T> make_shared() {
 #endif
   else if constexpr (std::is_same<SPType<T>, HerlihyRcPtrOpt<T>>::value)
     return HerlihyRcPtrOpt<T>::make_shared();
-<<<<<<< HEAD
   else if constexpr (std::is_same<SPType<T>, cdrc::rc_ptr<T>>::value)
     return cdrc::rc_ptr<T>::make_shared();
-  else if constexpr (std::is_same<SPType<PaddedInt>, OrcRcPtr<PaddedInt>>::value)   // ORC-GC's "orc_ptr"
-    return orcgc_ptp::make_orc<T>();
   else if constexpr (std::is_same<SPType<T>, IvoRcPtr<T>>::value)
     return ivo::shared_ptr<T>::make_shared();
-=======
   else if constexpr (std::is_same_v<SPType<T>, MySharedPtr<T>>)
-    //return parlay::shared_ptr<T>(new T{});
     return parlay::make_shared<T>();
   else if constexpr (std::is_same_v<SPType<T>, JssSharedPtr<T>>)
     return jss::make_shared<T>();
-  else if (std::is_same_v<SPType<T>, VTSharedPtr<T>>)
+  else if constexpr (std::is_same_v<SPType<T>, VTSharedPtr<T>>)
     return LFStructs::SharedPtr<T>(new T{});
->>>>>>> 36d00bd (Benchmarks for new atomic_shared_ptr)
   else {
     std::cerr << "invalid SPType" << std::endl;
     exit(1);

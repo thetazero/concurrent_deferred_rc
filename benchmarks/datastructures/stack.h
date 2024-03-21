@@ -57,14 +57,10 @@ concept Snapshotable = AtomicSharedPointer<T> && requires(T a) {
 //      is safe from destruction and reclamation as long as it is alive
 //
 template<typename T, template<typename> typename AtomicSPType, template<typename> typename SPType>
-<<<<<<< HEAD
-class alignas(64) atomic_stack {
-=======
 //requires AtomicSharedPointer<AtomicSPType<T>>
 class alignas(128) atomic_stack {
 
 public:
->>>>>>> 36d00bd (Benchmarks for new atomic_shared_ptr)
 
   struct Node;
   using atomic_sp_t = AtomicSPType<Node>;
@@ -74,16 +70,6 @@ public:
   // Load should return the shared_ptr-like type
   static_assert(std::is_same_v<load_t, sp_t>);
 
-<<<<<<< HEAD
-  struct Node {
-    T t;
-    sp_t next;
-    Node() = default;
-    Node(T t_) : t(std::move(t_)) { }
-  };
-
-=======
->>>>>>> 36d00bd (Benchmarks for new atomic_shared_ptr)
   atomic_sp_t head;
 
   // Return a snapshot if the atomic_ptr_type supports it,

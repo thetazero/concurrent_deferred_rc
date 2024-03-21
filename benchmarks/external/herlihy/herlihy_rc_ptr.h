@@ -13,7 +13,7 @@ namespace internal {
 template<typename T>
 struct herlihy_counted_object {
   typename std::aligned_storage<sizeof(T), alignof(T)>::type object;
-  utils::StickyCounter<uint64_t> ref_cnt;
+  cdrc::utils::StickyCounter<uint64_t> ref_cnt;
 
   template<typename... Args>
   explicit herlihy_counted_object(Args&&... args) : ref_cnt(1) {

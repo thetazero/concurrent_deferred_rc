@@ -15,6 +15,7 @@
 #include "barrier.hpp"
 
 #include "datastructures/stack.h"
+#include <cdrc/internal/utils.h>
 
 using namespace std;
 namespace po = boost::program_options;
@@ -53,7 +54,7 @@ struct StackBenchmark : Benchmark {
           size_t chunk_size = N/n_threads + 1;
           for(size_t i = p*chunk_size; i < N && i < (p+1)*chunk_size; i++) {
             for (size_t j = 0; j < expected_stack_size; j++) {
-              stacks[i].push_front(utils::rand::get_rand()%expected_stack_size);
+              stacks[i].push_front(cdrc::utils::rand::get_rand()%expected_stack_size);
             }
           }
         });
@@ -63,7 +64,7 @@ struct StackBenchmark : Benchmark {
     else { // initialize sequentially
       for(size_t i = 0; i < N; i++) {
         for (size_t j = 0; j < expected_stack_size; j++) {
-          stacks[i].push_front(utils::rand::get_rand()%expected_stack_size);
+          stacks[i].push_front(cdrc::utils::rand::get_rand()%expected_stack_size);
         }
       }
     }
@@ -109,7 +110,7 @@ struct StackBenchmark : Benchmark {
                 sum += val.has_value();
               }
               else {
-                auto val = utils::rand::get_rand() % expected_stack_size;
+                auto val = cdrc::utils::rand::get_rand() % expected_stack_size;
                 auto found = stacks[stack_index].find(val);
                 sum += found;
               }

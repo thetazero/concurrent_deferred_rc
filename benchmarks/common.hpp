@@ -8,6 +8,7 @@
 #include <memory>
 
 #include <cdrc/internal/utils.h>
+#include <cdrc/rc_ptr.h>
 
 #include "external/herlihy/herlihy_arc_ptr_opt.h"
 #include "external/herlihy/herlihy_rc_ptr.h"
@@ -73,11 +74,11 @@ using JssSharedPtr = jss::shared_ptr<T>;
 template<typename T>
 using JssFreeAtomicSharedPtr = jss::atomic_shared_ptr<T>;
 
-template<typename T>
-using VTSharedPtr = LFStructs::SharedPtr<T>;
+// template<typename T>
+// using VTSharedPtr = LFStructs::SharedPtr<T>;
 
-template<typename T>
-using VTAtomicSharedPtr = LFStructs::AtomicSharedPtr<T>;
+// template<typename T>
+// using VTAtomicSharedPtr = LFStructs::AtomicSharedPtr<T>;
 
 using PaddedInt = int;
 
@@ -99,8 +100,8 @@ SPType<PaddedInt> make_shared_int(int val) {
     return parlay::make_shared<PaddedInt>(val);
   else if constexpr (std::is_same_v<SPType<PaddedInt>, JssSharedPtr<PaddedInt>>)
     return jss::make_shared<PaddedInt>(val);
-  else if (std::is_same_v<SPType<PaddedInt>, VTSharedPtr<PaddedInt>>)
-    return LFStructs::SharedPtr<PaddedInt>(new PaddedInt{});
+  // else if (std::is_same_v<SPType<PaddedInt>, VTSharedPtr<PaddedInt>>)
+  //   return LFStructs::SharedPtr<PaddedInt>(new PaddedInt{});
   else // homebrew shared pointer [depricated]
   {
     std::cerr << "invalid SPType" << std::endl;
@@ -128,8 +129,8 @@ SPType<T> make_shared() {
     return parlay::make_shared<T>();
   else if constexpr (std::is_same_v<SPType<T>, JssSharedPtr<T>>)
     return jss::make_shared<T>();
-  else if constexpr (std::is_same_v<SPType<T>, VTSharedPtr<T>>)
-    return LFStructs::SharedPtr<T>(new T{});
+  // else if constexpr (std::is_same_v<SPType<T>, VTSharedPtr<T>>)
+  //   return LFStructs::SharedPtr<T>(new T{});
   else {
     std::cerr << "invalid SPType" << std::endl;
     exit(1);
@@ -204,8 +205,8 @@ void run_benchmark(std::string alg) {
     run_benchmark_helper<BenchmarkType, MyAtomicSharedPtr, MySharedPtr>("My atomic shared ptr");
   else if (alg == "jss-free")
     run_benchmark_helper<BenchmarkType, JssFreeAtomicSharedPtr, JssSharedPtr>("JSS-OpenSource");
-  else if (alg == "lfstructs")
-    run_benchmark_helper<BenchmarkType, VTAtomicSharedPtr, VTSharedPtr>("Vtyulb");
+  // else if (alg == "lfstructs")
+  //   run_benchmark_helper<BenchmarkType, VTAtomicSharedPtr, VTSharedPtr>("Vtyulb");
   else {
     std::cout << "invalid alg name: " << alg << std::endl;
     exit(1);

@@ -154,6 +154,8 @@ if (NOT folly_FIND_QUIETLY)
 endif()
 target_link_libraries(cdrc INTERFACE ${FOLLY_LIBRARIES})
 target_link_libraries(cdrc INTERFACE fmt)
+target_compile_definitions(cdrc INTERFACE -DARC_FOLLY_AVAILABLE)
+
 
 
 find_package(Parlay 2.2.1 REQUIRED)

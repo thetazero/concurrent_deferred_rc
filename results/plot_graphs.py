@@ -36,7 +36,7 @@ class bcolors:
 
 
 NUMA_COMMAND = 'numactl -i all '
-JEMALLOC_COMMAND = 'LD_PRELOAD=/usr/local/lib/libjemalloc.so '
+JEMALLOC_COMMAND = 'LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so '
 NUM_THREADS_COMMAND = 'NUM_THREADS={} '
 
 # Plot markers and colors to use

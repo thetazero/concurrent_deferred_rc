@@ -188,8 +188,8 @@ endfunction()
 # --------------------- Load-store experiment --------------------------
 
 add_custom_target(exp-store-figures)
-set(store_load_algorithms herlihy herlihy-opt orc arc)
-set(store_load_labels Herlihy "Herlihy (optimized)" OrcGC DRC)
+set(store_load_algorithms herlihy herlihy-opt orc arc ivo)
+set(store_load_labels Herlihy "Herlihy (optimized)" OrcGC DRC Ivo)
 set(store_load_colors tab:blue tab:red tab:purple tab:brown tab:pink)
 set(store_load_markers s P * | >)
 

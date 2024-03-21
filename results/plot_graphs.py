@@ -7,6 +7,8 @@ import multiprocessing
 import os
 import re
 import subprocess
+import json
+from datetime import datetime
 
 # Use headless backend for matplotlib. This allows it
 # to run on a server without a GUI available.
@@ -115,6 +117,8 @@ def plot_benchmarks(benchmark, benchmark_config, plot_config, output):
   plt.xscale(plot_config['xscale'])
   plt.yscale(plot_config['yscale'])
 
+  measurement_log = {}
+
   # Plot the lines
   for line, label, marker, color in zip(benchmark_config['linevalues'], plot_config['line_labels'], plot_config['markers'], plot_config['colors']):
     print(terminal_color(color) + '{} ({})'.format(label, line) + bcolors.ENDC)
@@ -138,6 +142,17 @@ def plot_benchmarks(benchmark, benchmark_config, plot_config, output):
       scale_factor = median_result / measurements[0]
       print('  {}={:<8} {} ({:.1f}x Increase)'.format(benchmark_config['xparam'], x, median_result, scale_factor))
     plt.plot(benchmark_config['xvalues'], measurements, label=label, marker=marker, color=color)
+    measurement_log[label] = measurements
+
+  time_stamp = datetime.now()
+  print(plot_config)
+  json.dump({
+    'benchmark': benchmark,
+    'benchmark_config': benchmark_config,
+    'plot_config': plot_config,
+    'output': output,
+    'measurement_log': measurement_log,
+  }, open(f'{time_stamp}_plot_dump.json', 'w'))
 
   # Plot the baseline (if any)
   if benchmark_config['baseline'] is not None:
@@ -242,7 +257,7 @@ if __name__ == "__main__":
   xvalues = get_thread_series() if args.xvalues == '{threads}' else list(map(int, args.xvalues.split(',')))
   print('Using values {} for parameter {} on the x-axis'.format(', '.join(str(x) for x in xvalues), args.xparam))
 
-  xbreakers = map(float, args.xbreakers.split(',')) if args.xbreakers is not None else []
+  xbreakers = list(map(float, args.xbreakers.split(','))) if args.xbreakers is not None else []
 
   # Make sure that the output directory is accessible
   if not os.path.exists(os.path.dirname(args.output)):

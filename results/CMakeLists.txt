@@ -276,7 +276,7 @@ add_scaling_figure(
 add_custom_target(exp-stack-figures)
 set(stack_algorithms "ivo,gnu,jss-free,folly,mine")
 set(stack_labels "Ivo,GNU C++,JSS-OS,Folly,Mine")
-set(stack_colors "tab:black,tab:brown,tab:blue,tab:green,tab:red")
+set(stack_colors "tab:gray,tab:brown,tab:blue,tab:green,tab:red")
 set(stack_markers "+,s,x,o,*")
 set(stack_threads "1,18,36,54,72,108,144,180,216")
 

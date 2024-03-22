@@ -159,6 +159,7 @@ target_compile_definitions(cdrc INTERFACE -DARC_FOLLY_AVAILABLE)
 
 
 find_package(Parlay 2.2.1 REQUIRED)
+include_directories(${PROJECT_SOURCE_DIR}/../install/parlaylib/include/)
 target_link_libraries(cdrc INTERFACE Parlay::parlay)
 message(STATUS "Using ParlayLib found at ${Parlay_DIR}")
 

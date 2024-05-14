@@ -135,6 +135,7 @@ set_target_properties(gflags_shared PROPERTIES
         MAP_IMPORTED_CONFIG_DEBUG Release
 )
 
+set(fmt_DIR ${PROJECT_SOURCE_DIR}/../install/fmt/lib/cmake/fmt)
 find_package(fmt REQUIRED)
 include_directories(${PROJECT_SOURCE_DIR}/../install/fmt/include/)
 link_directories(${PROJECT_SOURCE_DIR}/../install/fmt/lib)

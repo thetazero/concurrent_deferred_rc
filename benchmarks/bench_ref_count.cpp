@@ -2,15 +2,18 @@
 #include <algorithm>
 #include <chrono>
 #include <iostream>
+#include <latch>
 #include <numeric>
 #include <vector>
 #include <stdlib.h>
 #include <thread>
 
 #include <boost/program_options.hpp>
+#include <cdrc/rc_ptr.h>
 
 #include "common.hpp"
-#include "barrier.hpp"
+
+#include "measurement.h"
 
 using namespace std;
 namespace po = boost::program_options;
@@ -24,6 +27,8 @@ namespace bench_params{
   int cas_percent = 0;
   string alg = "gnu";
 }
+
+static operation_measurement load_timer{"Loads"};
 
 template<template<typename> typename AtomicSPType, template<typename> typename SPType>
 struct RefCountBenchmark : Benchmark {
@@ -64,17 +69,17 @@ struct RefCountBenchmark : Benchmark {
       std::vector<std::thread> threads;
 
       std::atomic<bool> done = false;
-      Barrier barrier(n_threads+1);
+      std::latch barrier(n_threads+1);
       //cout << N << endl;
 
       for (size_t p = 0; p < n_threads; p++) {
         threads.emplace_back([&barrier, &done, this, &cnt, p]() {
           cdrc::utils::rand::init(p+1);
 
-          barrier.wait();
+          barrier.arrive_and_wait();
           
           long long int ops = 0;
-          volatile long long int sum = 0;
+          long long int sum = 0;
           
           for (; !done; ops++) {
             int op = cdrc::utils::rand::get_rand()%100;
@@ -85,9 +90,11 @@ struct RefCountBenchmark : Benchmark {
               cerr << "not implemented" << endl;
               exit(1);
             } else {  // load
+              load_timer.start_measurement();
               SPType<PaddedInt> sp = asp_vec[asp_index].load();
-              int x = sp->getInt();
-              sum = sum + x;
+              load_timer.end_measurement();
+              int x = *sp;
+              sum += x;            
             }
           }
           cnt[p] = ops;
@@ -95,7 +102,7 @@ struct RefCountBenchmark : Benchmark {
       }
       
       // Run benchmark for one second
-      barrier.wait();
+      barrier.arrive_and_wait();
       start_timer();
 
       std::vector<size_t> allocations;
@@ -149,7 +156,7 @@ int main(int argc, char* argv[]) {
   ("update,u", po::value<int>()->default_value(10), "Percentage of Stores")
   ("runtime,r", po::value<double>()->default_value(0.5), "Runtime of Benchmark (seconds)")
   ("iterations,i", po::value<int>()->default_value(5), "Number of times to run benchmark")
-  ("alg,a", po::value<string>()->default_value("gnu"), "Choose one of: gnu, jss, folly, herlihy, weak_atomic, arc, orc");
+  ("alg,a", po::value<string>()->default_value("gnu"), choose_one_of);
 
 
   po::variables_map vm;
@@ -170,5 +177,3 @@ int main(int argc, char* argv[]) {
 
   run_benchmark<RefCountBenchmark>(bench_params::alg);
 }
-
-

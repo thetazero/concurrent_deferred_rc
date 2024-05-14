@@ -58,6 +58,7 @@ target_include_directories(cdrc INTERFACE
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 target_compile_features(cdrc INTERFACE cxx_std_20)
+set(CMAKE_CXX_STANDARD 20)
 
 # -------------------------------------------------------------------
 #                         Installation
@@ -96,17 +97,79 @@ message(STATUS "---------------------------------- Unit Tests ------------------
 find_package(Threads REQUIRED)
 target_link_libraries(cdrc INTERFACE Threads::Threads)
 
-if(LINUX)
-  # Enable 16 byte CAS
-  target_compile_definitions(cdrc INTERFACE -DMCX16)
-  target_compile_options(cdrc INTERFACE -mcx16)
+# Enable 16 byte CAS
+target_compile_definitions(cdrc INTERFACE -DMCX16)
+target_compile_options(cdrc INTERFACE -mcx16)
 
-  # The following might not be needed for 16-byte atomics
-  target_compile_options(cdrc INTERFACE "-march=native")
+# The following might not be needed for 16-byte atomics
+#target_compile_options(concurrent_deferred_rc INTERFACE "-march=native")
+
+# Configure support for just::threads, if available
+# Defines the flag JUST_THREADS_AVAILABLE in cmake,
+# and the compile definition ARC_JUST_THREADS_AVAILABLE
+# for C++ targets.
+find_library(JUST_THREADS_LIB NAMES justthread)
+find_path(JUST_THREADS_INCLUDE NAMES jss/experimental_concurrency.hpp PATH_SUFFIXES justthread)
+if(NOT JUST_THREADS_LIB)
+  message(STATUS "Could not find just::threads library. Certain targets will not be built")
+elseif(NOT JUST_THREADS_INCLUDE)
+  message(STATUS "Could not find just::threads includes. Certain targets will not be built")
+else()
+  message(STATUS "just::threads found -- lib: " ${JUST_THREADS_LIB} " include: " ${JUST_THREADS_INCLUDE})
+  set(JUST_THREADS_AVAILABLE TRUE)
+  add_library(jss INTERFACE)
+  target_include_directories(jss INTERFACE ${JUST_THREADS_INCLUDE})
+  target_link_libraries(jss INTERFACE ${JUST_THREADS_LIB} atomic)
+  target_compile_features(jss INTERFACE cxx_std_17)
+  target_compile_definitions(cdrc INTERFACE -DARC_JUST_THREADS_AVAILABLE)
+  target_link_libraries(cdrc INTERFACE jss)
 endif()
+
+# Configure support for folly, if available
+# Defines the flag FOLLY_AVAILABLE in cmake,
+# and the compile definition ARC_FOLLY_AVAILABLE
+# for C++ targets.
+find_package(Gflags CONFIG REQUIRED)
+
+set_target_properties(gflags_shared PROPERTIES
+        MAP_IMPORTED_CONFIG_DEBUG Release
+)
+
+set(fmt_DIR ${PROJECT_SOURCE_DIR}/../install/fmt/lib/cmake/fmt)
+find_package(fmt REQUIRED)
+include_directories(${PROJECT_SOURCE_DIR}/../install/fmt/include/)
+link_directories(${PROJECT_SOURCE_DIR}/../install/fmt/lib)
+
+set(folly_DIR ${PROJECT_SOURCE_DIR}/../install/folly/lib/cmake/folly)
+find_package(folly REQUIRED)
+include_directories(${PROJECT_SOURCE_DIR}/../install/folly/include/)
+link_directories(${PROJECT_SOURCE_DIR}/../install/folly/lib)
+if (NOT TARGET Folly::folly)
+  include("${FOLLY_CMAKE_DIR}/folly-targets.cmake")
+endif()
+
+set(FOLLY_LIBRARIES Folly::folly)
+
+if (NOT folly_FIND_QUIETLY)
+  message(STATUS "Found folly: ${PACKAGE_PREFIX_DIR}")
+endif()
+target_link_libraries(cdrc INTERFACE ${FOLLY_LIBRARIES})
+target_link_libraries(cdrc INTERFACE fmt)
+target_compile_definitions(cdrc INTERFACE -DARC_FOLLY_AVAILABLE)
+
+
+
+set(Parlay_DIR ${PROJECT_SOURCE_DIR}/../install/parlaylib/share/parlay/cmake/)
+find_package(Parlay 2.2.1 REQUIRED)
+include_directories(${PROJECT_SOURCE_DIR}/../install/parlaylib/include/)
+target_link_libraries(cdrc INTERFACE Parlay::parlay)
+message(STATUS "Using ParlayLib found at ${Parlay_DIR}")
 
 # User option to build unit tests
 option(CDRC_TEST  "Build unit tests"       ON)
+
+# -------------------------------------------------------------------
+#                             Tests
 
 if (CDRC_TEST)
   # Set CMake options for GoogleTest
@@ -175,6 +238,4 @@ endif()
 # -------------------------------------------------------------------
 #                           Figures
 
-if(LINUX)
-  add_subdirectory(results)
-endif()
+add_subdirectory(results)

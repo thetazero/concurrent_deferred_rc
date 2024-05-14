@@ -1,3 +1,6 @@
+# Misc
+todo.txt
+
 # Build
 /build
 /results/arc_results
@@ -43,4 +46,3 @@
 *.exe
 *.out
 *.app
-

@@ -2,6 +2,7 @@
 #ifndef CDRC_BENCHMARKS_DATASTRUCTURES_STACK_H
 #define CDRC_BENCHMARKS_DATASTRUCTURES_STACK_H
 
+//#include <concepts>
 #include <optional>
 #include <utility>
 
@@ -12,12 +13,11 @@
 
 template<typename T>
 concept SharedPointer = requires(T a) {
-  T(a);                                                         // A shared pointer is copyable
-  T(std::declval<T&&>());                                       // A shared pointer is movable
-  *a;                                                           // A shared pointer can be dereferenced
-  a.get();                                                      // We can access the raw pointer
-  a.operator->();                                               // We can access members of the underlying object
-  requires std::is_pointer_v<decltype(a.get())>;                // The raw pointer is in fact a pointer
+  //requires std::copyable<T>;     // A shared pointer is copyable and movable
+  *a;                            // A shared pointer can be dereferenced
+  a.get();                       // We can access the raw pointer
+  a.operator->();                // We can access members of the underlying object
+  requires std::is_pointer_v<decltype(a.get())>;
   requires std::is_pointer_v<decltype(a.operator->())>;
 };
 
@@ -36,10 +36,9 @@ concept AtomicSharedPointer = requires(T a) {
 // A snapshot should be dereferenceable to the same type
 // as the shared pointer
 template<typename T>
-concept Snapshotable = requires(T a) {
-    requires AtomicSharedPointer<T>;
-    a.get_snapshot();
-  std::is_same_v<decltype(*(a.get_snapshot())), decltype(*(a.load()))>;
+concept Snapshotable = AtomicSharedPointer<T> && requires(T a) {
+  a.get_snapshot();
+  //std::same_as<decltype(*(a.get_snapshot())), decltype(*(a.load()))>;
 };
 
 
@@ -58,7 +57,10 @@ concept Snapshotable = requires(T a) {
 //      is safe from destruction and reclamation as long as it is alive
 //
 template<typename T, template<typename> typename AtomicSPType, template<typename> typename SPType>
-class alignas(64) atomic_stack {
+//requires AtomicSharedPointer<AtomicSPType<T>>
+class alignas(128) atomic_stack {
+
+public:
 
   struct Node;
   using atomic_sp_t = AtomicSPType<Node>;
@@ -67,13 +69,6 @@ class alignas(64) atomic_stack {
 
   // Load should return the shared_ptr-like type
   static_assert(std::is_same_v<load_t, sp_t>);
-
-  struct Node {
-    T t;
-    sp_t next;
-    Node() = default;
-    Node(T t_) : t(std::move(t_)) { }
-  };
 
   atomic_sp_t head;
 
@@ -85,6 +80,14 @@ class alignas(64) atomic_stack {
   }
 
  public:
+  struct Node {
+    T t;
+    sp_t next;
+    Node() = default;
+    explicit Node(T t_) : t(std::move(t_)) { }
+  };
+
+
   atomic_stack() = default;
 
   atomic_stack(const atomic_stack&) = delete;
@@ -163,106 +166,5 @@ class alignas(64) atomic_stack {
     return atomic_sp_t::currently_allocated();
   }
 };
-
-// Stack specialization for OrcGC, since it unfortunately does not adhere to the C++
-// standard signatures for atomic shared pointers, so everything has to be written
-// slightly differently
-template<typename T>
-class alignas(64) atomic_stack<T, OrcAtomicRcPtr, OrcRcPtr> {
-
-  struct Node;
-  using atomic_sp_t = OrcAtomicRcPtr<Node>;
-  using sp_t = OrcRcPtr<Node>;
-
-  struct Node : orcgc_ptp::orc_base {
-    T t;
-    atomic_sp_t next;
-    Node() = default;
-    Node(T t_) : t(std::move(t_)) { }
-  };
-
-  atomic_sp_t head;
-
-  atomic_stack(atomic_stack&) = delete;
-  void operator=(atomic_stack) = delete;
-
- public:
-  atomic_stack() = default;
-
-  // Avoid exploding the call stack when destructing
-  ~atomic_stack() {
-    // Note: We need to go through and unlink the nodes in the stack
-    // because of deferred reclamation. The "standard" algorithm of
-    // just popping each node off might not prevent a stack overflow
-    // because the destruction might be deferred, and hence there
-    // might still be a long chain that gets recursively destroyed,
-    // which will blow the call stack if the stack is large.
-    sp_t node = head.load();
-    if (node) {
-      head.store(nullptr);
-      sp_t next = node->next;
-      node->next = nullptr;
-      while (next) {
-        node = next;
-        next = node->next;
-        node->next = nullptr;
-      }
-    }
-  }
-
-  bool find(T t) {
-    sp_t node = head.load();
-    while (node && node->t != t)
-      node = node->next.load();
-    return node != nullptr;
-  }
-
-  void push_front(T t) {
-    sp_t new_node = orcgc_ptp::make_orc<Node>();
-    sp_t next_node = head.load();
-    new_node->t = t;
-    new_node->next = next_node;
-
-    while (!head.compare_exchange_weak(next_node, new_node)) {
-      next_node = head.load();
-      new_node->next = next_node;
-    }
-
-  }
-
-  std::optional<T> front() {
-    OrcRcPtr<Node> ss = head.load();
-    if (ss) return {ss->t};
-    else return {};
-  }
-
-  std::optional<T> pop_front() {
-    sp_t ss = head.load();
-    sp_t next;
-    if (ss) next = ss->next.load();
-    while (ss && !head.compare_exchange_weak(ss, next)) {
-      ss = head.load();
-      if (ss) next = ss->next.load();
-    }
-    if (ss) return {ss->t};
-    else return {};
-  }
-
-  size_t size() {
-    size_t result = 0;
-    sp_t node = head.load();
-    while (node) {
-      result++;
-      node = node->next;
-    }
-    return result;
-  }
-
-  static constexpr bool tracks_allocations = true;
-
-  static std::ptrdiff_t currently_allocated() { return atomic_sp_t::currently_allocated(); }
-
-};
-
 
 #endif  // CDRC_BENCHMARKS_DATASTRUCTURES_STACK_H
